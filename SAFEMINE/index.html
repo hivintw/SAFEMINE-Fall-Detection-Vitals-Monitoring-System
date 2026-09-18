@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="manifest" href="manifest.json">
+  <title>SAFEMINE Dashboard</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDKs -->
+  <script src="firebaselinkhere"></script>
+  <script src="firebaselinkhere"></script>
+  <script src="firebaselinkhere"></script>
+
+  <style>
+    :root {
+      --bg-main: #0a0b0c;
+      --bg-card: rgba(20, 22, 25, 0.85); 
+      --text-primary: #FFFFFF;
+      --text-secondary: #8b929b;
+      --border-color: rgba(255, 179, 0, 0.15);
+      
+      /* Industrial Mining Theme Colors */
+      --color-amber: #FFB300;   
+      --color-red: #FF3B30;  
+      --color-green: #34C759; 
+      --color-blue: #32ADE6;  
+    }
+
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    body {
+      margin: 0; padding: 0; color: var(--text-primary);
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      min-height: 100vh; overflow-x: hidden; 
+      background-color: var(--bg-main); 
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(255, 179, 0, 0.05), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(255, 179, 0, 0.03), transparent 25%);
+    }
+
+    .alert-layer {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; opacity: 0; pointer-events: none;
+      background: radial-gradient(circle at 50% 30%, rgba(255,59,48,0.4) 0%, rgba(10,11,12,1) 70%);
+      transition: opacity 0.3s ease;
+    }
+    body.fall-alert .alert-layer { opacity: 1; }
+
+  
+    #login-screen {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 100;
+      background: rgba(10, 11, 12, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    
+    .login-box {
+      background: rgba(20, 22, 25, 0.9); padding: 50px 40px; border-radius: 24px; 
+      border: 1px solid rgba(255, 179, 0, 0.3); width: 100%; max-width: 440px; 
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 40px rgba(255, 179, 0, 0.1);
+      display: flex; flex-direction: column; gap: 25px; text-align: center;
+    }
+
+    .brand-title {
+      font-size: 42px; font-weight: 800; margin: 0; letter-spacing: 2px; line-height: 1.2;
+      background: linear-gradient(135deg, #FFD54F 0%, #FF8F00 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(255, 179, 0, 0.2);
+    }
+    
+    /* [FIXED] Removed negative margin to prevent text overlapping */
+    .brand-subtitle { 
+      font-size: 13px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; 
+      letter-spacing: 1px; margin-top: 5px; margin-bottom: 15px; 
+    }
+    
+    .login-input {
+      width: 100%; padding: 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; color: white; font-size: 15px; transition: all 0.2s ease;
+    }
+    .login-input:focus { outline: none; border-color: var(--color-amber); background: rgba(0,0,0,0.5); }
+
+    .btn-login { 
+      width: 100%; padding: 16px; background: var(--color-amber); color: #000; border: none; 
+      border-radius: 12px; font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; 
+    }
+    .btn-login:hover { box-shadow: 0 0 20px rgba(255, 179, 0, 0.4); transform: translateY(-1px); }
+
+    .btn-google { 
+      width: 100%; padding: 14px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); 
+      border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.2s;
+    }
+    .btn-google:hover { background: rgba(255,255,255,0.05); }
+    #login-error { color: var(--color-red); font-size: 13px; font-weight: 600; display: none; margin: 0; }
+
+   
+    #dashboard-screen { display: none; width: 100%; max-width: 1400px; padding: 20px 40px; flex-direction: column; gap: 20px; z-index: 1; }
+    
+    .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px; }
+    .top-brand { font-size: 24px; font-weight: 800; letter-spacing: 1px; color: var(--color-amber); }
+    
+    .controls-area { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .datetime-display { font-size: 14px; font-weight: 600; color: var(--text-secondary); padding: 10px 16px; background: rgba(0,0,0,0.4); border-radius: 50px; border: 1px solid rgba(255,255,255,0.05); }
+
+    #logoutBtn { padding: 10px 20px; font-size: 13px; font-weight: 700; background: transparent; color: var(--text-secondary); border: 1px solid var(--text-secondary); border-radius: 50px; cursor: pointer; transition: 0.2s;}
+    #logoutBtn:hover { color: white; border-color: white; }
+
+    .section-header { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; margin-top: 10px; color: #fff;}
+    
+    .monitor-row { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; gap: 20px; width: 100%; }
+
+    .card {
+      flex: 1; min-width: 260px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; padding: 24px;
+      display: flex; flex-direction: column; justify-content: space-between; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    
+    body.fall-alert .card { border-color: rgba(255, 59, 48, 0.4); background: rgba(255,59,48,0.05); }
+
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .label { font-size: 13px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+
+    .icon-svg { width: 28px; height: 28px; }
+    .icon-fall { stroke: var(--color-green); }
+    .icon-fall.alert-icon { stroke: var(--color-red); filter: drop-shadow(0 0 10px rgba(255,59,48,0.8)); }
+    .icon-temp { stroke: var(--color-blue); }
+    .icon-hr { stroke: var(--color-amber); }
+    .icon-spo2 { color: #fff; font-size: 22px; font-weight: 800; line-height: 1; }
+
+    .value-container { display: flex; align-items: baseline; gap: 8px; }
+    .value { font-size: 46px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .val-fall { color: var(--color-green); font-size: 28px; letter-spacing: 0; }
+    .val-fall.alert-val { color: var(--color-red); text-shadow: 0 0 15px rgba(255,59,48,0.4); }
+    .val-temp { color: var(--color-blue); }
+    .val-hr { color: var(--color-amber); }
+    .val-spo2 { color: #fff; }
+    .unit { font-size: 16px; color: var(--text-secondary); font-weight: 600; }
+
+    .warning-text { color: var(--text-secondary); font-size: 13px; margin-top: 12px; display: block; font-weight: 600; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; width: fit-content; }
+
+    .history-section {
+      width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; 
+      padding: 24px; margin-top: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .history-table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; }
+    .history-table th { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .history-table td { padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 14px; font-weight: 500; }
+    
+    .badge { padding: 6px 12px; border-radius: 50px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+    .badge-active { background: rgba(255,59,48,0.15); color: var(--color-red); border: 1px solid rgba(255,59,48,0.3); }
+    .badge-resolved { background: rgba(52,199,89,0.15); color: var(--color-green); border: 1px solid rgba(52,199,89,0.3); }
+
+    @media (max-width: 768px) {
+      #dashboard-screen { padding: 15px; }
+      .card { min-width: 100%; }
+      .history-table { display: block; overflow-x: auto; white-space: nowrap; }
+      .history-table th, .history-table td { padding-right: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="alert-layer"></div>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <div>
+        <h1 class="brand-title">SAFEMINE</h1>
+        <p class="brand-subtitle">Safety & Fall Emergency Monitoring in Mines</p>
+      </div>
+      
+      <input type="email" id="email" class="login-input" placeholder="Operator Email">
+      <input type="password" id="password" class="login-input" placeholder="Password">
+      <p id="login-error">Invalid credentials.</p>
+      <button id="btn-email-login" class="btn-login">Secure Login</button>
+      
+      <div style="text-align: center; color: var(--text-secondary); font-size: 12px; font-weight: 600;">OR</div>
+      
+      <button id="btn-google-login" class="btn-google">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#fff" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#fff" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#fff" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#fff" d="M24 48c6.48 0 11.93-2.11 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SCREEN -->
+  <div id="dashboard-screen">
+    <div class="top-bar">
+      <div class="top-brand">SAFEMINE</div>
+      <div class="controls-area">
+        <div class="datetime-display" id="datetime">--</div>
+        <button id="logoutBtn">End Shift (Sign Out)</button>
+      </div>
+    </div>
+    
+    <div class="section-header">Live Telemetry</div>
+    <div class="monitor-row">
+      <div class="card">
+        <div class="card-header">
+          <div class="label">Fall Status</div>
+          <svg id="icon-normal" class="icon-svg icon-fall" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <svg id="icon-alert" class="icon-svg icon-fall alert-icon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </div>
+        <div>
+          <div class="value-container"><div class="value val-fall" id="fall-val">Secure</div></div>
+          <span class="warning-text" id="fall-warning">Monitoring worker motion...</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="label">Ambient Temp</div><svg class="icon-svg icon-temp" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg></div>
+        <div>
+          <div class="value-container"><div class="value val-temp" id="temp-val">--</div><div class="unit">°C</div></div>
+          <span class="warning-text" id="temp-warning">Awaiting Node Data</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="label">Heart Rate</div><svg class="icon-svg icon-hr" id="hr-icon" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
+        <div>
+          <div class="value-container"><div class="value val-hr" id="hr-val">--</div><div class="unit">bpm</div></div>
+          <span class="warning-text" id="hr-warning">Awaiting Node Data</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="label">Blood Oxygen</div><div class="icon-spo2">O₂</div></div>
+        <div>
+          <div class="value-container"><div class="value val-spo2" id="spo2-val">--</div><div class="unit">%</div></div>
+          <span class="warning-text" id="spo2-warning">Awaiting Node Data</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY LOG -->
+    <div class="section-header" style="margin-top: 20px;">Incident History Log</div>
+    <div class="history-section">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Time of Incident</th>
+            <th>Event Type</th>
+            <th>Status</th>
+            <th>Resolution Time</th>
+          </tr>
+        </thead>
+        <tbody id="history-body">
+          <tr><td colspan="4" style="text-align:center; color: var(--text-secondary);">No recent incidents recorded.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. FIREBASE INITIALIZATION
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_LbUEpzPiejpUCcHJbx7KpA0fpM5c7dc",
+      authDomain: "domain",
+      databaseURL: "database",
+      projectId: "projectid",
+      storageBucket: "storage",
+      messagingSenderId: "id",
+      appId: "id"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    // ==========================================
+    // 2. AUTHENTICATION LOGIC
+    // ==========================================
+    const loginScreen = document.getElementById('login-screen');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const loginError = document.getElementById('login-error');
+    
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        loginScreen.style.display = 'none';
+        dashboardScreen.style.display = 'flex';
+        startDatabaseListener(); 
+        startHistoryListener();
+      } else {
+        loginScreen.style.display = 'flex';
+        dashboardScreen.style.display = 'none';
+      }
+    });
+
+    document.getElementById('btn-email-login').addEventListener('click', () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      auth.signInWithEmailAndPassword(email, password).catch((error) => {
+        loginError.innerText = error.message; loginError.style.display = 'block';
+      });
+    });
+
+    document.getElementById('btn-google-login').addEventListener('click', () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch((error) => {
+        loginError.innerText = error.message; loginError.style.display = 'block';
+      });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      auth.signOut(); window.location.reload(); 
+    });
+
+    // ==========================================
+    // 3. CORE VARIABLES & CLOCK
+    // ==========================================
+    let isFallDetected = false; 
+    let activeIncidentKey = null; // Tracks the current fall event ID in the database
+
+    function updateClock() { document.getElementById('datetime').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+    setInterval(updateClock, 1000); updateClock();
+
+    let audioCtx; let alarmInterval;
+    document.body.addEventListener('click', () => { initAudio(); }, { once: true });
+
+    function initAudio() {
+      if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+    }
+
+    function playAlarmBeep() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+      osc.type = 'square'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.setValueAtTime(1108, audioCtx.currentTime + 0.2); 
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); 
+      osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function startAlarm() { if (!alarmInterval) { playAlarmBeep(); alarmInterval = setInterval(playAlarmBeep, 500); } }
+    function stopAlarm() { if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } }
+
+    // ==========================================
+    // 4. DATABASE LISTENER (Telemetry & Auto-Logging)
+    // ==========================================
+    const hrVal = document.getElementById('hr-val'), hrWarning = document.getElementById('hr-warning');
+    const spo2Val = document.getElementById('spo2-val'), spo2Warning = document.getElementById('spo2-warning');
+    const fallVal = document.getElementById('fall-val'), fallIconNormal = document.getElementById('icon-normal'), fallIconAlert = document.getElementById('icon-alert'), fallWarning = document.getElementById('fall-warning');
+    const tempVal = document.getElementById('temp-val'), tempWarning = document.getElementById('temp-warning');
+
+    function startDatabaseListener() {
+      db.ref('telemetry').on('value', (snapshot) => {
+        const data = snapshot.val(); if (!data) return;
+        
+        // --- FALL DETECTION LOGIC ---
+        if (data.fallStatus === 'f') {
+          if (!isFallDetected) {
+            // UI Update
+            fallVal.innerText = "EMERGENCY"; fallVal.className = "value val-fall alert-val"; fallIconNormal.style.display = "none"; fallIconAlert.style.display = "block";
+            fallWarning.innerText = "IMPACT DETECTED AT " + new Date(data.timestamp || Date.now()).toLocaleTimeString('en-US'); fallWarning.style.color = "#ffffff";
+            document.body.classList.add("fall-alert"); isFallDetected = true; startAlarm(); 
+            
+            // LOGGING: Create a new incident record in Firebase
+            const newLogRef = db.ref('fall_history').push();
+            activeIncidentKey = newLogRef.key;
+            newLogRef.set({
+              timestamp: firebase.database.ServerValue.TIMESTAMP,
+              eventType: "Severe Impact / Fall",
+              status: "Active Alert",
+              resolvedTime: null
+            });
+          }
+        } else {
+          if (isFallDetected) {
+            // UI Update
+            fallVal.innerText = "Secure"; fallVal.className = "value val-fall"; fallIconNormal.style.display = "block"; fallIconAlert.style.display = "none";
+            fallWarning.innerText = "Monitoring worker motion..."; fallWarning.style.color = "var(--text-secondary)";
+            document.body.classList.remove("fall-alert"); isFallDetected = false; stopAlarm(); 
+            
+            // LOGGING: Mark the active incident as Cancelled by the worker's reset button
+            if (activeIncidentKey) {
+              db.ref('fall_history/' + activeIncidentKey).update({
+                status: "Cancelled by User (Reset)",
+                resolvedTime: firebase.database.ServerValue.TIMESTAMP
+              });
+              activeIncidentKey = null; // Clear the key so it doesn't get updated again
+            }
+          }
+        }
+        
+        // --- VITALS LOGIC [FIXED: Floating point rendering trimmed to integers/decimals] ---
+        if (data.temperature !== undefined) { 
+          tempVal.innerText = Number(data.temperature).toFixed(1); 
+          tempWarning.innerText = "Live reading"; tempWarning.style.color = "var(--color-green)"; 
+        }
+        
+        if (data.heartRate && data.spo2 && data.heartRate > 0 && data.spo2 > 0) {
+          hrVal.innerText = Number(data.heartRate).toFixed(0); 
+          hrWarning.innerText = "Live reading"; hrWarning.style.color = "var(--color-green)"; 
+          spo2Val.innerText = Number(data.spo2).toFixed(0); 
+          spo2Warning.innerText = "Live reading"; spo2Warning.style.color = "var(--color-green)";
+        } else {
+          hrVal.innerText = "--"; hrWarning.innerText = "No Heartbeat Signal"; hrWarning.style.color = "var(--color-red)"; 
+          spo2Val.innerText = "--"; spo2Warning.innerText = "Sensor Calibrating"; spo2Warning.style.color = "var(--color-blue)";
+        }
+      });
+    }
+
+    // ==========================================
+    // 5. HISTORY TABLE RENDERER
+    // ==========================================
+    function startHistoryListener() {
+      // Pull the last 5 incidents, ordered by time
+      db.ref('fall_history').orderByChild('timestamp').limitToLast(5).on('value', (snapshot) => {
+        const tbody = document.getElementById('history-body');
+        tbody.innerHTML = ""; // Clear table
+
+        if (!snapshot.exists()) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-secondary);">No recent incidents recorded.</td></tr>`;
+          return;
+        }
+
+        // Firebase returns objects in an order that isn't always an array, so we convert it
+        let logs = [];
+        snapshot.forEach((child) => { logs.push(child.val()); });
+        logs.reverse(); // Newest first
+
+        logs.forEach(log => {
+          const timeStr = new Date(log.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const resTimeStr = log.resolvedTime ? new Date(log.resolvedTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "--";
+          
+          let statusBadge = "";
+          if (log.status === "Active Alert") {
+            statusBadge = `<span class="badge badge-active">ACTIVE</span>`;
+          } else {
+            statusBadge = `<span class="badge badge-resolved">CLEARED</span>`;
+          }
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${timeStr}</td>
+            <td style="color: #fff;">${log.eventType}</td>
+            <td>${statusBadge}</td>
+            <td>${resTimeStr}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
