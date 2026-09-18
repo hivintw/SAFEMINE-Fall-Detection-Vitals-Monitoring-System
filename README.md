@@ -32,7 +32,8 @@ An IoT-based wearable system that provides long-range fall detection and real-ti
 
 The web interface is designed to provide immediate visibility into the user's status. It updates dynamically without requiring a page refresh. 
 
-*(Drag and drop a screenshot of your dashboard here)*
+*(<img width="1908" height="903" alt="image" src="https://github.com/user-attachments/assets/394caa42-f1f7-4b5b-9094-53d7f24ed32b" />
+)*
 
 ---
 
